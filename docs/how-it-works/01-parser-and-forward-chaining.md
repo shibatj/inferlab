@@ -66,6 +66,17 @@ Parser เป็นแบบ **recursive descent**: หนึ่งฟังก�
 
 ทุก error มี `code` คงที่ (เช่น `EXPECTED_COLON`) และ `message` ภาษาอังกฤษ ตอนทำ UI สองภาษา เราแปลจาก `code` ไม่ต้องไป parse ข้อความ
 
+| Code | เกิดเมื่อ | ตัวอย่าง |
+|---|---|---|
+| `UNEXPECTED_CHAR` | ตัวอักษรที่ภาษาไม่รู้จัก (lexer) | `fact a-b` |
+| `EXPECTED_STATEMENT` | บรรทัดไม่ได้ขึ้นต้นด้วย `fact` หรือ `rule` | `a` |
+| `EXPECTED_IDENT` | ต้องการชื่อ แต่เจออย่างอื่น (รวมถึง keyword หรือสุดบรรทัด/ไฟล์) | `rule R: IF a THEN` |
+| `EXPECTED_COLON` | ไม่มี `:` หลังชื่อกฎ | `rule R IF a THEN b` |
+| `EXPECTED_IF` | ไม่มี `IF` หลัง `:` | `rule R: a THEN b` |
+| `EXPECTED_AND_OR_THEN` | หลัง premise ไม่ใช่ `AND` หรือ `THEN` | `rule R: IF a b` |
+| `EXPECTED_END_OF_LINE` | มี token เกินมาหลัง statement จบ | `fact a b` |
+| `DUPLICATE_RULE` | ชื่อกฎซ้ำ (ตรวจหลัง parse ครบทั้งไฟล์) | `rule R: …` สองครั้ง |
+
 ## 4. Forward chaining (`forward.ts`)
 
 Forward chaining คือการ **เริ่มจากข้อเท็จจริง แล้วไล่สรุปไปข้างหน้า** จนสรุปอะไรเพิ่มไม่ได้อีก (quiescence) Engine ทำงานเป็นรอบ เรียกว่า **recognise–act cycle**:
