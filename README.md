@@ -2,9 +2,19 @@
 
 [![CI](https://github.com/shibatj/inferlab/actions/workflows/ci.yml/badge.svg)](https://github.com/shibatj/inferlab/actions/workflows/ci.yml)
 
-Interactive e-learning for **expert systems** (Thai / English). Write IF–THEN rules in a small language and watch an inference engine run forward and backward chaining step by step.
+Interactive e-learning for **expert systems** (Thai / English). Write IF–THEN rules in a small language and watch an inference engine reason with them step by step.
 
-> Status: **M4 — lessons.** Six bilingual lessons (MDX) with multiple-choice and engine-graded "predict the next rule" quizzes, fuzzy-logic, semantic-network and frames widgets, and per-browser progress — plus the M3 playground. Desktop browsers only.
+- **Playground:** a rule editor with live error checking; step-by-step forward chaining (step log, working memory, HOW) and backward chaining (AND/OR tree, WHY/HOW); four conflict-resolution strategies; MYCIN certainty factors.
+- **Six lessons** in Thai and English, with quizzes, including "predict the next rule" questions that the engine itself sets and marks. Widgets for fuzzy logic, semantic networks and frames.
+- **Auto-graded exercises:** write rules until every test passes, including hidden tests.
+
+The whole site is static and runs in the browser, with no backend. It is designed for desktop browsers.
+
+![Forward chaining in the playground](docs/images/playground-forward.png)
+
+| Backward chaining with certainty factors | Fuzzy-logic widget | Auto-graded exercise |
+|---|---|---|
+| ![AND/OR tree](docs/images/playground-backward.png) | ![Fuzzy widget](docs/images/lesson-fuzzy.png) | ![Exercise results](docs/images/exercise.png) |
 
 ## Rule language
 
@@ -17,25 +27,39 @@ rule Z1: IF has_hair THEN mammal
 rule Z5: IF mammal AND eats_meat THEN carnivore CF 0.9 PRIORITY 1
 ```
 
-CF (in [-1, 1]) and PRIORITY are optional.
+`CF` (a number in [-1, 1]) and `PRIORITY` are optional.
+
+## Tech
+
+Next.js 16 (App Router; every route is prerendered as static HTML), TypeScript, Tailwind CSS 4, CodeMirror 6, React Flow and MDX. The inference engine in `src/engine/` is written from scratch, with no rule-engine library.
 
 ## Development
 
 ```bash
 npm install
-npm test          # engine unit tests (Vitest)
+npm test           # unit tests (Vitest): engine, grader, lessons, playground logic
 npm run typecheck
 npm run lint
-npm run dev       # Next.js dev server → http://localhost:3000 (redirects to /th)
+npm run dev        # http://localhost:3000 (redirects to /th)
+
+npm run build
+npx playwright install chromium   # once
+npm run test:e2e   # end-to-end tests (Playwright) against the production build
 ```
+
+CI (GitHub Actions) runs lint, typecheck, unit tests, build and E2E tests on every push and pull request.
 
 ## Docs
 
-- [How it works 01: parser and forward chaining](docs/how-it-works/01-parser-and-forward-chaining.md) (Thai)
-- [How it works 02: certainty factors, conflict resolution, backward chaining](docs/how-it-works/02-backward-chaining-conflict-resolution-cf.md) (Thai)
-- [How it works 03: playground UI](docs/how-it-works/03-playground-ui.md) (Thai)
-- [How it works 04: lessons, quizzes and widgets](docs/how-it-works/04-lessons.md) (Thai)
-- [Architecture decision records](docs/adr/)
+The how-it-works guides explain each part from first principles (Thai):
+
+1. [Parser and forward chaining](docs/how-it-works/01-parser-and-forward-chaining.md)
+2. [Certainty factors, conflict resolution and backward chaining](docs/how-it-works/02-backward-chaining-conflict-resolution-cf.md)
+3. [Playground UI](docs/how-it-works/03-playground-ui.md)
+4. [Lessons, quizzes and widgets](docs/how-it-works/04-lessons.md)
+5. [Exercises and E2E tests](docs/how-it-works/05-exercises-and-e2e.md)
+
+Design decisions are recorded in the [architecture decision records](docs/adr/).
 
 ## Roadmap
 
@@ -43,7 +67,7 @@ npm run dev       # Next.js dev server → http://localhost:3000 (redirects to /
 2. **M2** Backward chaining, conflict-resolution strategies, certainty factors ✅
 3. **M3** Playground UI: editor, step log, working memory, AND/OR tree, example knowledge bases ✅
 4. **M4** Six bilingual lessons, quizzes, fuzzy/frames/semantic-net widgets ✅
-5. **M5** Auto-graded exercises, E2E tests, production deploy
+5. **M5** Auto-graded exercises and E2E tests ✅ · production deploy (Vercel) pending
 
 ## License
 
