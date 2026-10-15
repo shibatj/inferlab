@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/shibatj/inferlab/actions/workflows/ci.yml/badge.svg)](https://github.com/shibatj/inferlab/actions/workflows/ci.yml)
 
+**🔗 Live: https://inferlab-th.vercel.app** (desktop browsers)
+
 Interactive e-learning for **expert systems** (Thai / English). Write IF–THEN rules in a small language and watch an inference engine reason with them step by step.
 
 - **Playground:** a rule editor with live error checking; step-by-step forward chaining (step log, working memory, HOW) and backward chaining (AND/OR tree, WHY/HOW); four conflict-resolution strategies; MYCIN certainty factors.
@@ -47,7 +49,7 @@ npx playwright install chromium   # once
 npm run test:e2e   # end-to-end tests (Playwright) against the production build
 ```
 
-CI (GitHub Actions) runs lint, typecheck, unit tests, build and E2E tests on every push and pull request.
+CI (GitHub Actions) runs lint, typecheck, unit tests, build and E2E tests on every push and pull request. Vercel deploys `main` to production and every pull request to a preview URL. To run the E2E suite against a deployment: `E2E_BASE_URL=https://inferlab-th.vercel.app npm run test:e2e`.
 
 ## Docs
 
@@ -67,7 +69,7 @@ Design decisions are recorded in the [architecture decision records](docs/adr/).
 2. **M2** Backward chaining, conflict-resolution strategies, certainty factors ✅
 3. **M3** Playground UI: editor, step log, working memory, AND/OR tree, example knowledge bases ✅
 4. **M4** Six bilingual lessons, quizzes, fuzzy/frames/semantic-net widgets ✅
-5. **M5** Auto-graded exercises and E2E tests ✅ · production deploy (Vercel) pending
+5. **M5** Auto-graded exercises, E2E tests, production deploy on Vercel ✅
 
 ## License
 
