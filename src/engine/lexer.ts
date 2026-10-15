@@ -1,15 +1,18 @@
 import type { ParseError, Span } from "./types";
 
-export type Keyword = "FACT" | "RULE" | "IF" | "AND" | "THEN";
+export type Keyword = "FACT" | "RULE" | "IF" | "AND" | "THEN" | "CF" | "PRIORITY";
 
 export type Token =
   | { kind: "keyword"; keyword: Keyword; text: string; span: Span }
   | { kind: "ident"; text: string; span: Span }
+  | { kind: "number"; value: number; text: string; span: Span }
   | { kind: "colon"; text: ":"; span: Span }
   | { kind: "newline"; text: "\n"; span: Span }
   | { kind: "eof"; text: ""; span: Span };
 
-const KEYWORDS = new Set<string>(["FACT", "RULE", "IF", "AND", "THEN"]);
+const KEYWORDS = new Set<string>(["FACT", "RULE", "IF", "AND", "THEN", "CF", "PRIORITY"]);
+
+const DIGIT = /[0-9]/;
 
 // \p{M} is required for Thai: vowel and tone marks are combining characters, not letters.
 const IDENT_START = /[\p{L}_]/u;
@@ -62,6 +65,18 @@ export function tokenize(source: string): { tokens: Token[]; errors: ParseError[
       } else {
         tokens.push({ kind: "ident", text, span });
       }
+      col += text.length;
+    } else if (DIGIT.test(ch) || (ch === "-" && DIGIT.test(chars[i + 1] ?? ""))) {
+      // Number: -?digits(.digits)?
+      const start = i;
+      if (ch === "-") i++;
+      while (i < chars.length && DIGIT.test(chars[i])) i++;
+      if (chars[i] === "." && DIGIT.test(chars[i + 1] ?? "")) {
+        i++;
+        while (i < chars.length && DIGIT.test(chars[i])) i++;
+      }
+      const text = chars.slice(start, i).join("");
+      tokens.push({ kind: "number", value: Number(text), text, span: { line, col, length: text.length } });
       col += text.length;
     } else {
       errors.push({
