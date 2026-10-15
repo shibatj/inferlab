@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# InferLab
 
-## Getting Started
+[![CI](https://github.com/shibatj/inferlab/actions/workflows/ci.yml/badge.svg)](https://github.com/shibatj/inferlab/actions/workflows/ci.yml)
 
-First, run the development server:
+Interactive e-learning for **expert systems** (Thai / English). Write IF–THEN rules in a small language and watch an inference engine run forward and backward chaining step by step.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+> Status: **M1 — engine core.** The rule parser and forward chaining work and are tested. The UI comes in M3.
+
+## Rule language
+
+```
+# Identify an animal
+fact has_hair
+fact eats_meat
+
+rule Z1: IF has_hair THEN mammal
+rule Z5: IF mammal AND eats_meat THEN carnivore
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm test          # engine unit tests (Vitest)
+npm run typecheck
+npm run lint
+npm run dev       # Next.js dev server
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Docs
 
-## Learn More
+- [How it works: parser and forward chaining](docs/how-it-works/01-parser-and-forward-chaining.md) (Thai)
+- [Architecture decision records](docs/adr/)
 
-To learn more about Next.js, take a look at the following resources:
+## Roadmap
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **M1** Parser and forward chaining, with tests ✅
+2. **M2** Backward chaining, conflict-resolution strategies, certainty factors
+3. **M3** Playground UI: editor, step log, working memory, AND/OR tree, example knowledge bases
+4. **M4** Six bilingual lessons, quizzes, fuzzy/frames/semantic-net widgets
+5. **M5** Auto-graded exercises, E2E tests, production deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[MIT](LICENSE)
