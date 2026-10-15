@@ -1,0 +1,105 @@
+# Forward and backward chaining
+
+An inference engine can use rules in two directions: start from the **facts** and work forwards, or start from a **goal** and work backwards.
+
+## Forward chaining: data-driven
+
+Start from the facts you have and ask "**what can I conclude?**". The engine works in rounds, called the **recognise–act cycle**:
+
+1. **Match.** Find every rule whose conditions all hold and that has not fired yet. This is the **conflict set**.
+2. If the conflict set is empty, **stop** (quiescence).
+3. **Select** one rule from the conflict set. How to choose is the subject of lesson 4.
+4. **Act.** Fire the rule: add its conclusion to working memory, then go back to step 1.
+
+A new conclusion can make rules match that could not match before, so knowledge flows along a chain.
+
+<PlaygroundLink example="animal" />
+
+Try it: in the second cycle of these rules, which rule does the engine fire (choosing by rule order)?
+
+<PredictNextRule
+  id="l3-p1"
+  strategy="order"
+  cycle={2}
+  source={`fact rain
+fact cold
+rule R1: IF wet_ground AND cold THEN ice
+rule R2: IF rain THEN wet_ground
+rule R3: IF rain AND cold THEN take_coat`}
+/>
+
+In the first cycle R1 cannot fire because `wet_ground` is not known yet. Once R2 concludes `wet_ground`, R1 enters the conflict set and jumps ahead of R3 because it comes first in the file.
+
+## Backward chaining: goal-driven
+
+Start from a **goal (hypothesis)** and ask "**is this true?**".
+
+```
+prove(goal):
+  if goal is a known fact → true
+  for every rule whose THEN is goal:
+      prove every condition in that rule's IF   ← recursive call
+  if no way succeeds → cannot be proven
+```
+
+Each condition becomes a **subgoal** to prove, and the result is an **AND/OR tree**:
+
+- **OR**: a goal can be true in several ways (several rules conclude it).
+- **AND**: a rule applies only if *all* its conditions hold.
+
+<PlaygroundLink example="car" />
+
+In InferLab, a subgoal supported by neither a fact nor a rule is **unprovable** (the closed-world assumption). Real systems like MYCIN **ask the user** at that point instead, which is where the WHY question comes from: "why are you asking me this?"
+
+## Which to use
+
+| | Forward chaining | Backward chaining |
+|---|---|---|
+| Starts from | Facts | A goal |
+| Question | "What can I conclude?" | "Is this true?" |
+| Good when | Data arrives first, many possible conclusions | A few hypotheses to check |
+| Typical tasks | Monitoring, configuration (XCON) | Diagnosis (MYCIN) |
+| Weakness | May derive things irrelevant to your question | You must know what to prove |
+
+<Callout>
+Both directions use **the same rules**. Only the *direction* the engine walks through them differs. Try switching Forward and Backward on the same example in the playground.
+</Callout>
+
+<Quiz
+  id="l3-q1"
+  question="Which statement describes backward chaining correctly?"
+  options={[
+    "Start from all facts and fire every rule that can fire until it stops",
+    "Start from a goal, find rules that conclude it, and prove their conditions as subgoals",
+    "Fire random rules until an answer appears",
+    "It only works with single-condition rules",
+  ]}
+  answer={1}
+  explanation="Backward chaining is goal-driven: start from what you want to know and search backwards for support. A rule's conditions become subgoals to prove. The first option describes forward chaining."
+/>
+
+<Quiz
+  id="l3-q2"
+  question="A system helps a doctor check whether a patient has disease X, out of hundreds of symptoms that could be asked about. Which direction fits?"
+  options={[
+    "Forward chaining, because there is a lot of data",
+    "Backward chaining, because the goal is clear and it only asks about symptoms relevant to X",
+    "Either; results and efficiency are always the same",
+    "An expert system should not be used",
+  ]}
+  answer={1}
+  explanation="With a clear hypothesis and many possible questions, backward chaining explores only what bears on the goal instead of collecting every symptom first. That is why MYCIN used backward chaining."
+/>
+
+<Quiz
+  id="l3-q3"
+  question="In InferLab, with `rule R: IF a AND b THEN g`, the fact `a` is known but `b` is not, and no rule concludes `b`. What happens when backward chaining tries to prove g?"
+  options={[
+    "g is proven because a is true",
+    "The system halts because b is unknown",
+    "b is unprovable (closed world), so R does not fire and g fails",
+    "b is assumed true",
+  ]}
+  answer={2}
+  explanation="Under the closed-world assumption, anything with no supporting fact or rule is unprovable. An AND needs every condition, so R cannot apply, and since nothing else concludes g, g fails."
+/>

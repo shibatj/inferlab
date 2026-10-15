@@ -1,0 +1,88 @@
+# Knowledge acquisition and case studies
+
+An expert system is only as good as its knowledge. This final lesson looks at where that knowledge comes from, how hard it is to get, and what real systems from history teach us.
+
+## Knowledge engineering
+
+The person who draws knowledge out of experts and writes it as rules is the **knowledge engineer**. The work is usually described in stages (following Buchanan and colleagues, 1983):
+
+1. **Identification:** define the problem, its scope, the experts and the resources.
+2. **Conceptualisation:** find the key concepts and relations the expert uses.
+3. **Formalisation:** choose a representation (rules? frames?) and an inference method.
+4. **Implementation:** write the actual knowledge base.
+5. **Testing:** try it on real cases, then go back and fix. This loop always runs many times.
+
+### Elicitation techniques
+
+- **Interviews**, open or structured.
+- **Protocol analysis:** the expert solves real problems while thinking aloud, and you analyse the reasoning.
+- **Observation** of real work, and analysis of past cases.
+- **Repertory grids:** the expert compares items in pairs or threes to reveal the criteria they use to tell things apart.
+- **Machine learning:** learn rules from examples, for instance with decision trees.
+
+## The knowledge acquisition bottleneck
+
+Feigenbaum called it the **knowledge acquisition bottleneck**: the slowest, most expensive part of building an expert system is not the programming but getting the knowledge, because:
+
+- Experts often **can do but cannot explain** (tacit knowledge). Their expertise has become intuition.
+- Experts are busy and expensive.
+- Different experts may disagree.
+- Knowledge changes, so rules need constant maintenance.
+
+## Case studies
+
+### DENDRAL (Stanford, from 1965)
+
+Built by Edward Feigenbaum, Bruce Buchanan, Joshua Lederberg and Carl Djerassi, it helped chemists **infer the structure of organic molecules** from mass-spectrometry data, using chemical knowledge to rule out impossible structures. It is one of the first expert systems, and the source of the idea that domain knowledge is what makes such systems work.
+
+### MYCIN (Stanford, 1970s)
+
+Developed by Edward Shortliffe, it helped **identify bacteria causing blood infections and recommend antibiotics**. It had several hundred rules and used **backward chaining** and **certainty factors**, with an explanation facility that could answer WHY and HOW.
+
+In a 1979 evaluation, independent experts rated MYCIN's recommendations as acceptable about as often as those of infectious-disease specialists. **Yet MYCIN was never used routinely to treat patients.** The reasons were practical: entering a case took a long time, computers of the day were not part of ordinary hospital work, and there were open ethical and legal questions about responsibility. Its engine lived on as the shell **EMYCIN**.
+
+### XCON / R1 (DEC, in use from about 1980)
+
+Developed by John McDermott at Carnegie Mellon for Digital Equipment Corporation, it **configured VAX computers** from customer orders, checking that parts fit together and adding what was missing. It was written in **OPS5**, used **forward chaining**, and grew to thousands of rules. DEC reported savings on the order of tens of millions of dollars a year, which made it the best-known commercial success of the era. It also showed that **maintaining a large rule base** is a heavy burden when the product line keeps changing.
+
+## Lessons and legacy
+
+- **Brittleness:** an expert system performs well inside its scope and fails abruptly outside it. It does not know what it does not know.
+- **No common sense:** everything it knows, someone had to write down.
+- **Maintenance:** thousands of rules conflict easily and are hard to change.
+
+The ideas live on: **business rules engines** such as Drools run in banking and insurance, CLIPS is still used, and **explainability** and **separating knowledge from machinery** matter again now that AI systems must be auditable. Many systems today combine human-written rules with models learned from data.
+
+<Quiz
+  id="l6-q1"
+  question="What does 'knowledge acquisition bottleneck' mean?"
+  options={[
+    "Computers lack the memory to store all the rules",
+    "Getting knowledge out of experts and into rules is the slowest, hardest part of building an expert system",
+    "The inference engine slows down with many rules",
+    "Users don't want to answer the system's questions",
+  ]}
+  answer={1}
+  explanation="The bottleneck is the knowledge, not the hardware or the engine. Experts often cannot articulate intuitive knowledge, have little time, and disagree. Engine speed is a problem algorithms like Rete already address."
+/>
+
+<Quiz
+  id="l6-q2"
+  question="Which system used forward chaining to configure computers from customer orders, and was a commercial success?"
+  options={["DENDRAL", "MYCIN", "XCON (R1)", "EMYCIN"]}
+  answer={2}
+  explanation="DEC's XCON (R1), written in OPS5, used forward chaining: start from the parts in the order and derive what to add and how to arrange it. Configuration is naturally data-driven."
+/>
+
+<Quiz
+  id="l6-q3"
+  question="Why was MYCIN never used routinely on patients despite good evaluation results?"
+  options={[
+    "Its recommendations were wrong far more often than doctors'",
+    "Practical reasons: slow data entry, no fit with hospital workflows, and ethical and legal questions about responsibility",
+    "Because it used forward chaining",
+    "Because it had no explanation facility",
+  ]}
+  answer={1}
+  explanation="The 1979 evaluation rated its recommendations on a par with specialists, so accuracy was not the issue; adoption was. An important lesson: being correct is not enough, a system must also fit its users' work and context."
+/>

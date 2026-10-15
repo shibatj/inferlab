@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { backwardChain, forwardChain, parse, type ParseError, type Strategy } from "@/engine";
 import type { Lang } from "@/i18n/config";
 import { fmt, type Dictionary } from "@/i18n/dictionaries";
@@ -34,7 +35,10 @@ function fromExample(ex: Example): State {
   };
 }
 
-function load(): State {
+function load(requestedId: string | null): State {
+  // A lesson link (?example=car) asks for a specific example and takes precedence.
+  const requested = EXAMPLES.find((e) => e.id === requestedId);
+  if (requested) return fromExample(requested);
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") as State | null;
     if (saved && EXAMPLES.some((e) => e.id === saved.exampleId)) return saved;
@@ -51,14 +55,31 @@ const noopSubscribe = () => () => {};
  * server and on the first client pass, then the workbench initialised from storage, so the
  * markup never mismatches during hydration.
  */
-export function Playground(props: { lang: Lang; dict: Dict; errorText: Dictionary["errors"] }) {
+export function Playground(props: Props) {
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  if (!mounted) return <main className="flex-1 bg-bg" />;
-  return <Workbench {...props} />;
+  const placeholder = <main className="flex-1 bg-bg" />;
+  if (!mounted) return placeholder;
+  return (
+    <Suspense fallback={placeholder}>
+      <WithRequestedExample {...props} />
+    </Suspense>
+  );
 }
 
-function Workbench({ lang, dict, errorText }: { lang: Lang; dict: Dict; errorText: Dictionary["errors"] }) {
-  const [state, setState] = useState<State>(load);
+type Props = { lang: Lang; dict: Dict; errorText: Dictionary["errors"] };
+
+/**
+ * Reads ?example= with useSearchParams, which is already updated when a client-side <Link>
+ * renders this page (window.location is not yet). The key remounts the workbench when the
+ * requested example changes, because Cache Components keeps visited pages mounted.
+ */
+function WithRequestedExample(props: Props) {
+  const requested = useSearchParams().get("example");
+  return <Workbench key={requested ?? ""} requested={requested} {...props} />;
+}
+
+function Workbench({ lang, dict, errorText, requested }: Props & { requested: string | null }) {
+  const [state, setState] = useState<State>(() => load(requested));
   /** Replay position: how many steps (forward) or events (backward) are shown. */
   const [k, setK] = useState(0);
 

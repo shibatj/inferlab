@@ -1,0 +1,83 @@
+# Knowledge representation
+
+Before a computer can use an expert's knowledge, we must write that knowledge in a form a program can read and reason with. This lesson covers the three forms at the core of classic expert systems.
+
+## 1. Production rules
+
+The most common form: **IF condition THEN conclusion**. It comes from Newell and Simon's work on *production systems* as a model of human problem solving.
+
+```
+rule Z5: IF mammal AND eats_meat THEN carnivore
+```
+
+- **Strengths:** easy to read, so experts can check rules themselves. Each rule is independent and can be added on its own, and the engine can explain itself by pointing at the rules it used.
+- **Weaknesses:** with thousands of rules, conflicts and redundancy creep in unnoticed. Rules also say nothing about the *structure* of things: "all birds have wings" has to be repeated for every kind of bird.
+
+## 2. Semantic networks
+
+A **semantic network** represents knowledge as a **graph**: nodes are concepts and edges are relations. The key relation is **isA**, which gives **inheritance**: a concept lower down automatically gets the properties of the ones above it.
+
+The example below comes from **Collins & Quillian (1969)**. Pick a concept and a property and see how far the lookup has to climb.
+
+<SemanticNetWidget />
+
+Collins and Quillian asked people to verify sentences and found they took **longer** when the property sat further up the hierarchy. Confirming "a canary has skin" (stored at animal) was slower than "a canary can sing" (stored at canary itself). This suggested human memory might be organised hierarchically, though later studies found many exceptions.
+
+<Callout>
+**Exceptions:** `ostrich` stores `can_fly = no` on itself. That value **overrides** the `can_fly = yes` it would inherit from `bird`, because the lookup stops at the nearest node that has the property.
+</Callout>
+
+## 3. Frames
+
+A **frame** (Minsky, 1974) is a record for one concept, made of **slots** and their values. Frames are linked by isA just like a semantic network, so they inherit too. What frames add is a view of knowledge as the **structure of objects**, much like the classes and objects of object-oriented programming that came later.
+
+Here is the same knowledge seen as frames. Try `ostrich` or `tweety`.
+
+<FramesWidget />
+
+Frame values are often **defaults** that can be overridden. "Birds fly" means birds typically fly, not that every bird does. This *default reasoning* is hard for classical logic. In real systems, slots can also carry **procedures**, such as *if-needed* (compute the value when asked) and *if-added* (run when a value is filled in).
+
+## Comparison
+
+| | Production rules | Semantic network | Frames |
+|---|---|---|---|
+| Unit of knowledge | IF–THEN rule | Node + relation edges | Frame + slots |
+| Good at | Step-by-step decisions | Relations between concepts | Object structure, defaults |
+| Inheritance | Not built in | Yes (isA) | Yes (isA) + overrides |
+| Explaining | Easy: replay the rules | Follow the graph path | Show which frame a value came from |
+
+Real systems often **mix them**: frames hold the structure of objects, and rules make decisions by reading slot values.
+
+<Quiz
+  id="l2-q1"
+  question="In the semantic network above, what is the answer to 'can an ostrich fly?' (can_fly), and why?"
+  options={[
+    "yes — because ostrich isA bird and birds fly",
+    "no — because the value stored on ostrich overrides the one inherited from bird",
+    "unknown — because there are two conflicting values",
+    "yes — because values from higher nodes take priority",
+  ]}
+  answer={1}
+  explanation="The lookup starts at ostrich and stops at the first node that has the property. Ostrich stores can_fly = no itself, so the lookup never reaches bird. The nearer value always wins."
+/>
+
+<Quiz
+  id="l2-q2"
+  question="Collins & Quillian (1969) found people took longer to verify 'a canary has skin' than 'a canary can sing'. How does the hierarchical model explain this?"
+  options={[
+    "The first sentence is longer",
+    "'Has skin' is stored at animal, so it takes more isA hops than 'can sing', stored at canary",
+    "People don't know birds have skin",
+    "'Can sing' is a default that gets overridden",
+  ]}
+  answer={1}
+  explanation="In the hierarchical model, a property is stored at the most general level where it holds. has_skin lives at animal, two hops above canary, while can_sing lives at canary itself. The further the climb, the longer it takes."
+/>
+
+<Quiz
+  id="l2-q3"
+  question="To represent 'meeting rooms usually have a projector and 10 chairs, but room A has 20 chairs', which form fits best?"
+  options={["Production rules alone", "Frames with defaults and overrides", "A plain database table", "Fuzzy logic"]}
+  answer={1}
+  explanation="This is object structure with defaults and exceptions, which is exactly what frames are good at. A 'meeting room' frame has chairs = 10; a 'room A' frame isA meeting room and overrides chairs = 20, while the projector is inherited automatically."
+/>

@@ -1,0 +1,108 @@
+# Reasoning under uncertainty
+
+Real experts rarely say "100% certain". A doctor says it is *probably* this organism; a mechanic says it is *usually* the battery. This lesson looks at three ways expert systems deal with uncertainty.
+
+## 1. Certainty factors (MYCIN)
+
+The MYCIN team at Stanford wanted numbers that physicians could give easily, so they devised the **certainty factor (CF)**: a number in **[−1, 1]**, where 1 means certainly true, −1 certainly false and 0 no evidence.
+
+Four formulas to know (all of them are in InferLab's engine):
+
+| What | Formula |
+|---|---|
+| AND condition | CF = min(CF of each condition) |
+| A rule fires | CF of conclusion = CF of conditions × CF of the rule |
+| Threshold | A condition holds when its CF is **above 0.2** |
+| Two rules, same conclusion (both positive) | CF = a + b × (1 − a) |
+
+**Example:** `fact gram_negative CF 0.9`, `fact rod_shaped CF 0.8`, `fact grows_in_blood CF 0.7` and the rule `M2: IF gram_negative AND rod_shaped AND grows_in_blood THEN pseudomonas CF 0.4`.
+
+1. Conditions: min(0.9, 0.8, 0.7) = **0.7**, above 0.2, so the rule fires.
+2. Conclusion: 0.7 × 0.4 = **0.28**.
+3. Rule M3 adds evidence of 0.15, so the combined CF is 0.28 + 0.15 × (1 − 0.28) = **0.388**.
+
+<PlaygroundLink example="mycin" />
+
+<Callout tone="warn">
+A CF is **not a probability**. Later analyses (for example Heckerman, 1986) showed that the CF combination rules agree with probability theory only under very strong independence assumptions. In practice, CFs were easy to use and gave results experts accepted.
+</Callout>
+
+## 2. Bayes' rule
+
+With real probability data, the mathematically grounded tool is **Bayes' rule**:
+
+```
+P(H | E) = P(E | H) × P(H) / P(E)
+```
+
+Read it as: the probability of hypothesis H **after** seeing evidence E.
+
+**Classic example:** a disease affects 1% of people. A test is positive 90% of the time when the disease is present (sensitivity) and gives false positives 5% of the time in healthy people. If someone tests positive, how likely is it they have the disease?
+
+```
+P(+)           = 0.9 × 0.01 + 0.05 × 0.99 = 0.009 + 0.0495 = 0.0585
+P(disease | +) = 0.009 / 0.0585 ≈ 0.154  → about 15%
+```
+
+Only **about 15%**, even though the test is "90% accurate". Because the disease is rare, false positives from the many healthy people outnumber the true positives. This is the **base rate fallacy**, and people fall for it all the time.
+
+The drawback of Bayes for early expert systems: it needs many **priors** and **conditional probabilities** that experts often cannot supply. That is one reason MYCIN chose CFs. Later, **Bayesian networks** cut down the numbers needed by stating which variables depend on which.
+
+## 3. Fuzzy logic
+
+CFs and Bayes deal with "**is it true?**" (uncertainty). Sometimes the issue is "**how true?**" (vagueness). Is 37.8 °C a fever? The answer is not yes or no but "a fever, to some degree".
+
+**Fuzzy logic** (Zadeh, 1965) makes set membership a **degree** in [0, 1] instead of 0 or 1. **Mamdani** inference has four steps:
+
+1. **Fuzzify:** turn the input into a membership degree for each set.
+2. **Evaluate rules:** each rule fires to the degree its condition holds (AND uses min).
+3. **Aggregate:** clip each rule's output set at that degree, then combine them with max.
+4. **Defuzzify:** turn the resulting shape back into one number, for example its centroid.
+
+Move the temperature and watch which rules fire, how strongly, and how the combined shaded area changes:
+
+<FuzzyWidget />
+
+Look at 37.2–37.6 °C, where the "normal" and "fever" sets overlap. Two rules fire at once to different degrees, and the output changes **smoothly** instead of jumping the way a plain IF rule with a hard cut-off would.
+
+<Quiz
+  id="l5-q1"
+  question="Two rules conclude 'flu', one with CF 0.6 and the other with CF 0.5. Using MYCIN's formula, what is the combined CF of flu?"
+  options={["0.5", "0.8", "1.1", "0.3"]}
+  answer={1}
+  explanation="Both are positive, so a + b(1 − a) = 0.6 + 0.5 × 0.4 = 0.8. The result never exceeds 1, and extra evidence adds less when belief is already high."
+/>
+
+<Quiz
+  id="l5-q2"
+  question="For `IF a AND b THEN c CF 0.9`, a has CF 0.9 and b has CF 0.15. What happens?"
+  options={[
+    "c gets CF 0.81",
+    "c gets CF 0.135",
+    "The rule does not fire, because the condition CF (min = 0.15) is not above the 0.2 threshold",
+    "c gets CF 0.9",
+  ]}
+  answer={2}
+  explanation="The AND takes the minimum, 0.15, which is not above 0.2, so the rule does not fire at all. The threshold stops very weak evidence from being used to draw further conclusions."
+/>
+
+<Quiz
+  id="l5-q3"
+  question="A disease affects 1% of people; the test has 90% sensitivity and a 5% false-positive rate. After a positive result, the probability of disease is closest to:"
+  options={["90%", "50%", "15%", "1%"]}
+  answer={2}
+  explanation="P(+) = 0.9 × 0.01 + 0.05 × 0.99 = 0.0585, and P(disease | +) = 0.009 / 0.0585 ≈ 0.154. Because the disease is rare, false positives from the many healthy people outnumber the true positives."
+/>
+
+<Quiz
+  id="l5-q4"
+  question="Which statement is about vagueness, the kind of thing fuzzy logic is designed for?"
+  options={[
+    "There is a 30% chance of rain tomorrow",
+    "The doctor is unsure whether the patient has this infection",
+    "The water in this glass is 'warm' to degree 0.7",
+    "The blood test might be inaccurate",
+  ]}
+  answer={2}
+  explanation="'Warm' has no sharp boundary; how warm 40 °C water is, is a matter of degree, not an unknown answer. The other options are uncertainty about whether something is true, which is the job of probability or CFs."
+/>

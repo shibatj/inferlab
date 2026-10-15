@@ -1,0 +1,82 @@
+# What is an expert system?
+
+An **expert system** is a program that combines a human expert's **domain knowledge** with an **inference mechanism** to solve problems that normally need human expertise: diagnosing a disease, finding why a machine fails, or configuring a computer to match a customer's order.
+
+Edward Feigenbaum, one of the field's pioneers, summed up its lesson: the power of these systems comes from the **knowledge** they contain more than from clever algorithms. The idea became known as *"knowledge is power."*
+
+## The main parts
+
+| Part | Job | In InferLab |
+|---|---|---|
+| **Knowledge base** | Long-term knowledge of the domain, usually IF–THEN rules | The `rule` lines in the editor |
+| **Working memory** | Facts about the *current case* | `fact` lines and conclusions reached so far |
+| **Inference engine** | Decides which rule to apply to which facts, and derives new ones | Forward / backward chaining |
+| **Explanation facility** | Answers *how* a conclusion was reached and *why* something is being asked | The HOW / WHY panels |
+| **User interface** | Takes input and shows results | The playground page |
+
+<Callout>
+The heart of an expert system is the **separation of knowledge (the knowledge base) from the machinery that uses it (the inference engine)**. You can add or change rules without touching the engine, and the same engine works for a different domain's knowledge.
+</Callout>
+
+## How it differs from an ordinary program
+
+In an ordinary program, knowledge and control flow are tangled together in code:
+
+```
+if (lightsDim && clickingSound) return "battery dead";
+else if (noLights) return "battery dead";
+...
+```
+
+When the expert gives you a new rule, you have to find where to insert it without breaking the existing if-else order. In an expert system you just add a line:
+
+```
+rule C6: IF engine_cranks AND smell_fuel THEN engine_flooded
+```
+
+and the inference engine decides when to use it. This separation led to **expert system shells** such as EMYCIN (MYCIN with the medical knowledge removed, leaving only the engine) and NASA's CLIPS, which is still in use.
+
+## When to use one
+
+A good fit when:
+
+- **The domain is narrow and well defined**, like "why won't the car start", not "repair any car".
+- **Real experts exist** who can explain their reasoning as rules and are willing to.
+- **Explanations matter**, for example where decisions must be auditable.
+- **No straightforward algorithm** solves the problem more simply.
+
+A poor fit when the problem needs broad **common sense**, or when the knowledge changes faster than anyone can maintain the rules. Lesson 6 comes back to these limits.
+
+<Quiz
+  id="l1-q1"
+  question="Which part of an expert system decides which rule to use right now?"
+  options={["Knowledge base", "Working memory", "Inference engine", "Explanation facility"]}
+  answer={2}
+  explanation="The inference engine matches rules against the facts in working memory and picks a rule to fire. The knowledge base only stores the rules; it decides nothing."
+/>
+
+<Quiz
+  id="l1-q2"
+  question="What is the most important difference between an expert system and an ordinary program?"
+  options={[
+    "Expert systems are always written in a special programming language",
+    "Expert systems keep domain knowledge separate from the mechanism that uses it",
+    "Expert systems run faster than ordinary programs",
+    "Expert systems need no input from the user",
+  ]}
+  answer={1}
+  explanation="Separating the knowledge base from the inference engine lets you change knowledge without touching the engine, and reuse the engine for other domains (an expert system shell). Speed and language are not the defining difference."
+/>
+
+<Quiz
+  id="l1-q3"
+  question="Which task is the best fit for an expert system?"
+  options={[
+    "A chatbot that talks about anything",
+    "Sorting a million numbers",
+    "Diagnosing faults in one engine model from symptoms a mechanic can observe",
+    "Predicting tomorrow's stock price from historical data",
+  ]}
+  answer={2}
+  explanation="Diagnosing one engine model is a narrow domain, mechanics can explain their reasoning as rules, and users want to know why the system concluded what it did. Sorting already has direct algorithms, and an open-ended chatbot needs far too much common sense."
+/>
