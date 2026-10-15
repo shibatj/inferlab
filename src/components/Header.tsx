@@ -15,6 +15,9 @@ export function Header({ lang, dict }: { lang: Lang; dict: Dictionary }) {
           <Link href={`/${lang}`} className="text-muted hover:text-fg">
             {dict.nav.home}
           </Link>
+          <Link href={`/${lang}/lessons`} className="text-muted hover:text-fg">
+            {dict.nav.lessons}
+          </Link>
           <Link href={`/${lang}/playground`} className="text-muted hover:text-fg">
             {dict.nav.playground}
           </Link>

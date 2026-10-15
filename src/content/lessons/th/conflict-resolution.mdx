@@ -1,0 +1,78 @@
+# Conflict Resolution
+
+ใน forward chaining บ่อยครั้งที่มี **หลายกฎ** เงื่อนไขเป็นจริงพร้อมกัน กลุ่มนี้เรียกว่า **conflict set** engine fire ได้ทีละกฎ จึงต้องมีกลยุทธ์เลือก — เรียกว่า **conflict resolution**
+
+ทำไมลำดับถึงสำคัญ? เพราะกฎที่ fire ก่อนจะเปลี่ยน working memory ซึ่งอาจเปลี่ยนว่ากฎไหน match ต่อ และถ้าระบบหยุดเมื่อได้คำตอบแรก กฎที่ fire ก่อนก็คือคำตอบ
+
+## สี่กลยุทธ์ใน InferLab
+
+| กลยุทธ์ | เลือกกฎที่… | แนวคิด |
+|---|---|---|
+| **Rule order** | อยู่บรรทัดบนสุด | ผู้เขียนกฎควบคุมลำดับเอง ง่ายแต่เปราะ — ย้ายบรรทัดแล้วพฤติกรรมเปลี่ยน |
+| **Specificity** | มีเงื่อนไขมากกว่า | กฎที่เจาะจงกว่าน่าจะถูกกว่า ใช้แทน "ข้อยกเว้นมาก่อนกฎทั่วไป" |
+| **Priority** | มีค่า `PRIORITY` สูงกว่า | ผู้เชี่ยวชาญกำหนดความสำคัญเอง (CLIPS เรียกว่า *salience*) |
+| **Recency** | match ข้อเท็จจริงที่ใหม่กว่า | ให้ความสนใจกับสิ่งที่เพิ่งเกิด ทำให้การอนุมาน "ต่อเนื่อง" เป็นเรื่องเดียว |
+
+ทุกกลยุทธ์ถ้า **เสมอกัน** ให้กลับไปใช้ rule order
+
+### Specificity — กฎทั่วไป vs ข้อยกเว้น
+
+<PredictNextRule
+  id="l4-p1"
+  strategy="specificity"
+  source={`fact bird
+fact penguin
+rule R1: IF bird THEN can_fly
+rule R2: IF bird AND penguin THEN cannot_fly`}
+/>
+
+ถ้าใช้ rule order R1 จะ fire ก่อนและสรุปว่าเพนกวินบินได้ — specificity แก้ปัญหานี้ได้โดยไม่ต้องย้ายบรรทัด
+
+### Recency — เดินตามเรื่องที่เพิ่งเกิด
+
+ทุกข้อเท็จจริงมี "เวลา" ที่เข้า working memory (1, 2, 3, …) recency เทียบเวลาของเงื่อนไขในแต่ละกฎ **จากใหม่ไปเก่า** ทีละตำแหน่ง ใครใหม่กว่าชนะ (แบบ LEX ของ OPS5)
+
+<PredictNextRule
+  id="l4-p2"
+  strategy="recency"
+  cycle={2}
+  source={`fact sensor_ok
+fact alarm
+rule R1: IF sensor_ok THEN log_status
+rule R2: IF alarm THEN notify_guard
+rule R3: IF notify_guard AND sensor_ok THEN open_camera`}
+/>
+
+รอบแรก R2 ชนะเพราะ `alarm` (เวลา 2) ใหม่กว่า `sensor_ok` (เวลา 1) พอ R2 สรุป `notify_guard` (เวลา 3) R3 ที่ใช้มันก็ชนะต่อทันที — engine จึง "ตามเรื่องสัญญาณเตือน" ไปจนจบก่อนกลับมาทำงานจุกจิกอย่าง `log_status`
+
+<PlaygroundLink example="animal" />
+
+## Refraction และ Quiescence
+
+- **Refraction** — กฎหนึ่งจะไม่ fire ซ้ำกับข้อมูลชุดเดิม ถ้าไม่มีข้อนี้ กฎที่เงื่อนไขยังจริงอยู่จะถูกเลือกซ้ำไปเรื่อย ๆ ไม่มีวันหยุด
+- **Quiescence** — สภาวะที่ conflict set ว่าง engine หยุด
+
+## เรื่องประสิทธิภาพ: Rete
+
+การ match ทุกกฎกับทุกข้อเท็จจริงในทุกรอบช้ามากเมื่อระบบใหญ่ **Rete algorithm** (Forgy, 1982) จำผลการ match บางส่วนไว้ในเครือข่ายของ node แล้วอัปเดตเฉพาะส่วนที่ข้อเท็จจริงเปลี่ยน ทำให้ระบบอย่าง OPS5 และ CLIPS รองรับกฎนับพันได้ ส่วน InferLab ใช้วิธี match ตรง ๆ เพราะกฎในบทเรียนมีแค่หลักสิบ
+
+<Quiz
+  id="l4-q1"
+  question="ถ้าไม่มี refraction จะเกิดอะไรขึ้นกับ forward chaining?"
+  options={[
+    "engine จะทำงานเร็วขึ้น",
+    "กฎที่เงื่อนไขยังจริงอาจถูกเลือก fire ซ้ำไม่รู้จบ",
+    "engine จะใช้ backward chaining แทน",
+    "จะไม่มีกฎใด fire ได้เลย",
+  ]}
+  answer={1}
+  explanation="ข้อเท็จจริงไม่เคยถูกลบ เงื่อนไขของกฎที่ fire แล้วจึงยังจริงอยู่ ถ้าไม่ห้าม fire ซ้ำ กฎนั้นจะอยู่ใน conflict set ตลอดไป และอาจถูกเลือกซ้ำทุกรอบจน engine ไม่หยุด"
+/>
+
+<Quiz
+  id="l4-q2"
+  question="ผู้เชี่ยวชาญบอกว่า 'โดยทั่วไปไข้ + ไอ = หวัด แต่ถ้า ไข้ + ไอ + หายใจลำบาก = ต้องส่งต่อแพทย์' กลยุทธ์ไหนจัดการข้อยกเว้นนี้ได้เป็นธรรมชาติที่สุด?"
+  options={["Rule order", "Specificity", "Recency", "สุ่มเลือก"]}
+  answer={1}
+  explanation="กฎ 'ส่งต่อแพทย์' มีเงื่อนไขมากกว่า (เจาะจงกว่า) specificity จึงเลือกมันก่อนกฎทั่วไปโดยอัตโนมัติ ไม่ต้องพึ่งการเรียงบรรทัดให้ถูก ซึ่งเปราะเมื่อกฎเยอะขึ้น"
+/>

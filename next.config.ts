@@ -1,3 +1,4 @@
+import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -26,4 +27,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Lessons are .mdx files imported by the lesson page. Turbopack needs plugins named as strings.
+const withMDX = createMDX({
+  options: { remarkPlugins: ["remark-gfm"] },
+});
+
+export default withMDX(nextConfig);

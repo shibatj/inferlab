@@ -1,0 +1,78 @@
+# Conflict resolution
+
+In forward chaining, **several rules** often have all their conditions satisfied at once. This group is the **conflict set**. The engine fires one rule at a time, so it needs a strategy to choose. That is **conflict resolution**.
+
+Why does the order matter? The rule fired first changes working memory, which can change what matches next. And if the system stops at its first answer, the rule fired first *is* the answer.
+
+## Four strategies in InferLab
+
+| Strategy | Picks the rule that… | Idea |
+|---|---|---|
+| **Rule order** | comes first in the file | The author controls order. Simple but fragile: move a line and behaviour changes. |
+| **Specificity** | has more conditions | More specific rules are likelier to be right. A way to say "exceptions before general rules". |
+| **Priority** | has the higher `PRIORITY` | The expert sets importance directly (CLIPS calls it *salience*). |
+| **Recency** | matches more recent facts | Focus on what just happened, so reasoning follows one line of thought. |
+
+When a strategy **ties**, it falls back to rule order.
+
+### Specificity: general rules vs exceptions
+
+<PredictNextRule
+  id="l4-p1"
+  strategy="specificity"
+  source={`fact bird
+fact penguin
+rule R1: IF bird THEN can_fly
+rule R2: IF bird AND penguin THEN cannot_fly`}
+/>
+
+With rule order, R1 fires first and concludes that the penguin can fly. Specificity fixes this without moving any lines.
+
+### Recency: follow what just happened
+
+Every fact has a "time" when it entered working memory (1, 2, 3, …). Recency compares the times of each rule's conditions **newest first**, position by position. The newer one wins (OPS5's LEX strategy).
+
+<PredictNextRule
+  id="l4-p2"
+  strategy="recency"
+  cycle={2}
+  source={`fact sensor_ok
+fact alarm
+rule R1: IF sensor_ok THEN log_status
+rule R2: IF alarm THEN notify_guard
+rule R3: IF notify_guard AND sensor_ok THEN open_camera`}
+/>
+
+In the first cycle R2 wins because `alarm` (time 2) is newer than `sensor_ok` (time 1). Once R2 concludes `notify_guard` (time 3), R3, which uses it, wins next. The engine follows the alarm through to the end before returning to chores like `log_status`.
+
+<PlaygroundLink example="animal" />
+
+## Refraction and quiescence
+
+- **Refraction:** a rule does not fire again on the same data. Without it, a rule whose conditions stay true would be picked again and again, forever.
+- **Quiescence:** the conflict set is empty, so the engine stops.
+
+## A note on performance: Rete
+
+Matching every rule against every fact on every cycle gets slow in large systems. The **Rete algorithm** (Forgy, 1982) caches partial matches in a network of nodes and updates only what changes when facts change. That is what let systems like OPS5 and CLIPS handle thousands of rules. InferLab matches directly, because the lesson rule sets have only tens of rules.
+
+<Quiz
+  id="l4-q1"
+  question="What would happen to forward chaining without refraction?"
+  options={[
+    "The engine would run faster",
+    "A rule whose conditions stay true could be fired again and again without end",
+    "The engine would switch to backward chaining",
+    "No rule could fire at all",
+  ]}
+  answer={1}
+  explanation="Facts are never removed, so a fired rule's conditions remain true. Unless it is barred from firing again, it stays in the conflict set and may be picked every cycle, so the engine never stops."
+/>
+
+<Quiz
+  id="l4-q2"
+  question="An expert says: 'normally fever + cough = cold, but fever + cough + difficulty breathing = refer to a doctor'. Which strategy handles this exception most naturally?"
+  options={["Rule order", "Specificity", "Recency", "Random choice"]}
+  answer={1}
+  explanation="The 'refer to a doctor' rule has more conditions, so specificity picks it before the general rule automatically, without relying on the lines being in the right order, which gets fragile as rules grow."
+/>
