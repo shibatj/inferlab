@@ -51,6 +51,26 @@ describe("parse: valid programs", () => {
     expect(rule.span).toEqual({ line: 2, col: 3, length: "rule R: IF bb THEN c".length });
   });
 
+  it("defaults CF to 1 and priority to 0", () => {
+    const { kb } = parse("fact a\nrule R: IF a THEN b");
+    expect(kb.facts[0].cf).toBe(1);
+    expect(kb.rules[0]).toMatchObject({ cf: 1, priority: 0 });
+  });
+
+  it("parses CF on facts and CF and PRIORITY on rules", () => {
+    const { kb, errors } = parse("fact a cf 0.8\nrule R: IF a THEN b CF -0.5 PRIORITY 10");
+    expect(errors).toEqual([]);
+    expect(kb.facts[0].cf).toBe(0.8);
+    expect(kb.rules[0]).toMatchObject({ cf: -0.5, priority: 10 });
+    expect(kb.rules[0].span.length).toBe("rule R: IF a THEN b CF -0.5 PRIORITY 10".length);
+  });
+
+  it("accepts PRIORITY without CF and negative priorities", () => {
+    const { kb, errors } = parse("rule R: IF a THEN b PRIORITY -3");
+    expect(errors).toEqual([]);
+    expect(kb.rules[0]).toMatchObject({ cf: 1, priority: -3 });
+  });
+
   it("measures columns in UTF-16 code units", () => {
     // The emoji is two UTF-16 units, so `x` starts at column 8, not 7.
     const { kb, errors } = parse("fact 😀x");
@@ -73,6 +93,13 @@ describe("parse: errors", () => {
     ["fact a b", "EXPECTED_END_OF_LINE", 8],
     ["a", "EXPECTED_STATEMENT", 1],
     ["fact a-b", "UNEXPECTED_CHAR", 7],
+    ["fact a CF", "EXPECTED_NUMBER", 10],
+    ["fact a CF high", "EXPECTED_NUMBER", 11],
+    ["fact a CF 1.5", "CF_OUT_OF_RANGE", 11],
+    ["rule R: IF a THEN b CF -2", "CF_OUT_OF_RANGE", 24],
+    ["rule R: IF a THEN b PRIORITY 1.5", "EXPECTED_INTEGER", 30],
+    ["rule R: IF a THEN b PRIORITY 1 CF 0.5", "EXPECTED_END_OF_LINE", 32],
+    ["fact cf", "EXPECTED_IDENT", 6],
   ] as const)("%s → %s at column %i", (src, code, col) => {
     expect(firstError(src)).toMatchObject({ code, line: 1, col });
   });

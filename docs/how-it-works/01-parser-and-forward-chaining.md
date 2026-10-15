@@ -118,7 +118,9 @@ Facts เริ่มต้น: `has_hair, eats_meat, tawny_color, dark_spots, b
 
 ### กฎที่ข้อสรุปรู้อยู่แล้ว
 
-ถ้ากฎ match แต่ข้อสรุปอยู่ใน working memory แล้ว กฎยัง **fire** (ถูกนับเป็นหนึ่ง cycle) แต่ `added` เป็น `null` แบบนี้ step log จะแสดงให้ผู้เรียนเห็นว่ากฎนั้นทำงานแต่ไม่ได้ข้อมูลใหม่ ตรงกับพฤติกรรมของ production system ทั่วไป
+ถ้ากฎ match แต่ข้อสรุปอยู่ใน working memory แล้ว กฎยัง **fire** (ถูกนับเป็นหนึ่ง cycle) แต่ไม่ได้ fact ใหม่ ตรงกับพฤติกรรมของ production system ทั่วไป
+
+> **อัปเดต M2:** step ไม่มีฟิลด์ `added` แล้ว แทนด้วย `conclusion`, `cfBefore` (เป็น `null` ถ้าเป็น fact ใหม่) และ `cfAfter` เพราะเมื่อมี certainty factor กฎที่ "ไม่ได้ fact ใหม่" ยังเปลี่ยน CF ของ fact เดิมได้ — ดู [02](02-backward-chaining-conflict-resolution-cf.md)
 
 ### ความซับซ้อน
 

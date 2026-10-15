@@ -1,13 +1,24 @@
 import { tokenize, type Keyword, type Token } from "./lexer";
-import type { Atom, KnowledgeBase, ParseError, ParseErrorCode, ParseResult, Rule } from "./types";
+import type {
+  Atom,
+  Fact,
+  KnowledgeBase,
+  ParseError,
+  ParseErrorCode,
+  ParseResult,
+  Rule,
+  Span,
+} from "./types";
 
 /**
  * Grammar (one statement per line):
  *
- *   program := line*
- *   line    := statement? NEWLINE
- *   statement := "fact" IDENT
- *              | "rule" IDENT ":" "IF" IDENT ("AND" IDENT)* "THEN" IDENT
+ *   program   := line*
+ *   line      := statement? NEWLINE
+ *   statement := "fact" IDENT cf?
+ *              | "rule" IDENT ":" "IF" IDENT ("AND" IDENT)* "THEN" IDENT cf? priority?
+ *   cf        := "CF" NUMBER          (in [-1, 1])
+ *   priority  := "PRIORITY" NUMBER    (an integer)
  *
  * A syntax error abandons the rest of its line (panic-mode recovery), so one mistake
  * produces one error and the following lines are still checked.
@@ -49,6 +60,36 @@ export function parse(source: string): ParseResult {
 
   const isKeyword = (t: Token, k: Keyword) => t.kind === "keyword" && t.keyword === k;
 
+  // Each optional clause returns the span it covered so the statement span can include it.
+  const optionalCf = (): { cf: number; end?: Span } => {
+    if (!isKeyword(peek(), "CF")) return { cf: 1 };
+    next();
+    const t = next();
+    if (t.kind !== "number") return fail("EXPECTED_NUMBER", `Expected a number after 'CF', found ${describe(t)}`, t);
+    if (t.value < -1 || t.value > 1) {
+      return fail("CF_OUT_OF_RANGE", `CF must be between -1 and 1, got ${t.text}`, t);
+    }
+    return { cf: t.value, end: t.span };
+  };
+
+  const optionalPriority = (): { priority: number; end?: Span } => {
+    if (!isKeyword(peek(), "PRIORITY")) return { priority: 0 };
+    next();
+    const t = next();
+    if (t.kind !== "number") {
+      return fail("EXPECTED_NUMBER", `Expected a number after 'PRIORITY', found ${describe(t)}`, t);
+    }
+    if (!Number.isInteger(t.value)) {
+      return fail("EXPECTED_INTEGER", `PRIORITY must be a whole number, got ${t.text}`, t);
+    }
+    return { priority: t.value, end: t.span };
+  };
+
+  const parseFact = (): Fact => {
+    const atom = expectIdent("a fact name");
+    return { ...atom, cf: optionalCf().cf };
+  };
+
   const parseRule = (ruleToken: Token): Rule => {
     const name = expectIdent("a rule name");
     const colon = next();
@@ -71,13 +112,17 @@ export function parse(source: string): ParseResult {
       }
     }
     const conclusion = expectIdent("a conclusion after 'THEN'");
-    const end = conclusion.span;
+    const cf = optionalCf();
+    const priority = optionalPriority();
+    const end = priority.end ?? cf.end ?? conclusion.span;
     const start = ruleToken.span;
     return {
       name: name.name,
       premises,
       conclusion,
-      // Rules sit on one line, so the span runs from `rule` to the end of the conclusion.
+      cf: cf.cf,
+      priority: priority.priority,
+      // Rules sit on one line, so the span runs from `rule` to the end of the last clause.
       span: { line: start.line, col: start.col, length: end.col + end.length - start.col },
     };
   };
@@ -85,7 +130,7 @@ export function parse(source: string): ParseResult {
   const parseStatement = () => {
     const t = next();
     if (isKeyword(t, "FACT")) {
-      kb.facts.push(expectIdent("a fact name"));
+      kb.facts.push(parseFact());
     } else if (isKeyword(t, "RULE")) {
       kb.rules.push(parseRule(t));
     } else {
